@@ -9,8 +9,8 @@ def GetTime():
     utc_time = dt.replace(tzinfo = timezone.utc)
     return(str(utc_time.timestamp()))
 
-LogFolder = os.getcwd()+"\Logs"
-Log = ("\Log-"+str(GetTime())+".log")
+LogFolder = os.getcwd()+"/Logs"
+Log = ("/Log-"+str(GetTime())+".log")
 
 #Create Log Folder if it doesn't exist
 if (os.path.isdir(LogFolder) == False):
