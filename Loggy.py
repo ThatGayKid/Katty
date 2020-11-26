@@ -1,26 +1,27 @@
 from datetime import timezone
 import datetime
 import os
+import pathlib
+from pathlib import Path
 # Getting the current date  
 # and time
 
 def GetTime():
-    dt = datetime.datetime.now()
-    utc_time = dt.replace(tzinfo = timezone.utc)
-    return(str(utc_time.timestamp()))
-
-LogFolder = os.getcwd()+"/Logs"
-Log = ("/Log-"+str(GetTime())+".log")
+	dt = datetime.datetime.now()
+	utc_time = dt.replace(tzinfo = timezone.utc)
+	return(str(utc_time.timestamp()))
+LogFolder = Path(Path().absolute(),"Logs")
+Log = LogFolder / ("Log-"+str(GetTime())+".log")
 
 #Create Log Folder if it doesn't exist
+LogFolder = Path(Path().absolute(),"Logs")
 if (os.path.isdir(LogFolder) == False):
-    os.mkdir(LogFolder)
+	os.mkdir(LogFolder)
 
 def Add(message,author):
-    print (message)
-    f = open(LogFolder+str(Log), "a")
-    f.write('\n'+str(message)+","+str(author)+","+str(GetTime()))
-    f.close()
-    return
+	f = open(Log, "a")
+	f.write('\n'+message+","+author+","+str(GetTime()))
+	f.close()
+	return
 
-print("Created Log at - "+LogFolder+Log)
+print ("Log will be saved at - "+str(Log))
