@@ -7,21 +7,29 @@ from pathlib import Path
 # and time
 
 def GetTime():
-	dt = datetime.datetime.now()
-	utc_time = dt.replace(tzinfo = timezone.utc)
-	return(str(utc_time.timestamp()))
+    dt = datetime.datetime.now()
+    utc_time = dt.replace(tzinfo = timezone.utc)
+    return(int(utc_time.timestamp()))
+
 LogFolder = Path(Path().absolute(),"Logs")
-Log = LogFolder / ("Log-"+str(GetTime())+".log")
+Log = ""
 
 #Create Log Folder if it doesn't exist
-LogFolder = Path(Path().absolute(),"Logs")
-if (os.path.isdir(LogFolder) == False):
-	os.mkdir(LogFolder)
+def Create(Name):
+    global Log
+    Log = Path(Path().absolute(),"Logs",(Name+" - "+str(GetTime())+".csv"))
+    
+    if (os.path.isdir(LogFolder) == False):
+        os.mkdir(LogFolder)
+        
+    f = open(Log,"a")
+    f.write("Type,Message,User,TimeStamp\n")
+    f.close
+    
+    print ("Log will be saved at - "+str(Log))
 
 def Add(message,author):
-	f = open(Log, "a")
-	f.write('\n'+message+","+author+","+str(GetTime()))
-	f.close()
-	return
-
-print ("Log will be saved at - "+str(Log))
+    f = open(Log,"a")
+    f.write(str(message)+","+str(author)+","+str(datetime.datetime.utcnow())+'\n')
+    f.close
+    return
