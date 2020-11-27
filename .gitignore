@@ -1,4 +1,4 @@
 .env
-logs/
+Logs/
 .vscode/
 __pycache__/
