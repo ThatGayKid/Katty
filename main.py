@@ -76,11 +76,12 @@ async def Gay(ctx):
     await ctx.channel.send("no u")
 
 # --------------- Cute --------------- #
-@bot.command(name = "Cutey Pie")
+#If your reading this, you have free access to this hidden command. If you want dick around with it.
+@bot.command(name = "SexyBoy")
 @commands.is_nsfw()
 @commands.cooldown(1,BCN,BucketType.default)
 async def Cute(ctx):
     Loggy.Add ("Secret,Cute",ctx.author)
-    await ctx.channel.send("https://i.imgur.com/SiKKBLU.jpg")
+    await ctx.channel.send("https://imgur.com/a/zBWGUuB")
 
 bot.run(TOKEN)

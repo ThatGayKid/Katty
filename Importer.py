@@ -12,13 +12,19 @@ reddit = praw.Reddit(
 )
 
 #Cats - CatGirls - Anime Girls
-SubReddits=['animecatgirls','Nekomimi','AnimeGirls','AverageAnimeTiddies']
+SubReddits=['animecatgirls','Nekomimi','AnimeGirls','AverageAnimeTiddies']    
 def Picture(Type):
-    Sub = reddit.subreddit(SubReddits[(random.randint(0,1))+(Type*2)])
-    Submissions = reddit.get_subreddit(Sub).get_hot(limit=100)
-    for Posts in Submissions:
-        if random.randint(0,99) == 0:
-            return Posts
-    return Submissions[99]
-    
-    
+    Sub = (SubReddits[(random.randint(0,1))+(Type*2)])
+    while True:
+        Post = ImportImage(Sub,50)
+        if Post[-4:-3] == ".":
+            return Post
+        
+#Import a random url t
+def ImportImage(Sub,Total):
+    Import = reddit.subreddit(Sub).hot(limit=Total)
+    Posts = []
+    for Submission in Import:
+        Posts.append(Submission.url)
+    return random.choice(Posts)
+

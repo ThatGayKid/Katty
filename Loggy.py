@@ -30,6 +30,6 @@ def Create(Name):
 
 def Add(message,author):
     f = open(Log,"a")
-    f.write(str(message)+","+str(author)+","+str(datetime.datetime.utcnow())+'\n')
+    f.write(str(message)+',"'+str(author)+'","'+str(datetime.datetime.utcnow())+'"\n')
     f.close
     return
