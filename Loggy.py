@@ -29,6 +29,7 @@ def Create(Name):
     print ("Log will be saved at - "+str(Log))
 
 def Add(message,author):
+    print(message)
     f = open(Log,"a")
     f.write(str(message)+',"'+str(author)+'","'+str(datetime.datetime.utcnow())+'"\n')
     f.close

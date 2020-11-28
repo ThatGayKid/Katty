@@ -1,5 +1,7 @@
-import praw
 import random
+from array import *
+
+import praw
 
 from dotenv import load_dotenv
 import os
@@ -12,19 +14,32 @@ reddit = praw.Reddit(
 )
 
 #Cats - CatGirls - Anime Girls
-SubReddits=['animecatgirls','Nekomimi','AnimeGirls','AverageAnimeTiddies']    
-def Picture(Type):
-    Sub = (SubReddits[(random.randint(0,1))+(Type*2)])
-    while True:
-        Post = ImportImage(Sub,50)
-        if Post[-4:-3] == ".":
-            return Post
-        
-#Import a random url t
-def ImportImage(Sub,Total):
-    Import = reddit.subreddit(Sub).hot(limit=Total)
-    Posts = []
-    for Submission in Import:
-        Posts.append(Submission.url)
-    return random.choice(Posts)
+SubReddits=[['animecatgirls','Nekomimi'],['AnimeGirls','AverageAnimeTiddies']]
+Posts = [[],[]]
 
+def GeneratePosts(Type):
+    TmpPosts=[]
+    Posts[Type]
+    
+    while len(Posts[Type]) <= 50 :
+        for x in range(len(SubReddits[Type])):
+            Sub = SubReddits [Type][x]
+            Import = reddit.subreddit(Sub).hot(limit=200)
+            del Sub
+            
+            for Post in Import:
+                if Post.url[-4:-3] == ".":
+                    TmpPosts.append(Post.url)
+        random.shuffle(TmpPosts)
+        Posts[Type] = TmpPosts[50:]
+
+
+def Picture(Type):
+    for Types in range(len(SubReddits)):
+        if len(Posts[Types]) < 1:
+            GeneratePosts(Types)
+    Response = Posts[Type][0]
+    del Posts [Type][0]
+    return Response
+
+print(Picture(0))

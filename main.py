@@ -3,18 +3,19 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, has_permissions, CheckFailure
 from discord.ext.commands.cooldowns import BucketType
-import Importer
 
+import Importer
 import Loggy
 Loggy.Create("Katty")
 
+import time
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
 # ----------- Bot Variables ---------- #
 TOKEN = os.getenv("TOKEN")
-bot = commands.Bot(command_prefix="!K ")
+bot = commands.Bot(command_prefix="!T ")
 
 HHelp = ("```\
 Help   - Displays this menu\n\
@@ -22,7 +23,7 @@ Catty  - Shows you a Cute Cat Girl\n\
 Kitty  - Shows you a Cute Anime Girl\n\
 ```")
 
-BCN = 5#Bot Cooldown Normal
+BCN = 1#Bot Cooldown Normal
 BCR = 2#Bot Cooldown Reddit
 
 # ------------------------------------ #
@@ -66,6 +67,21 @@ async def Catty(ctx):
 async def Kitty(ctx):
     Loggy.Add ("Command,Kitty",ctx.author)
     await ctx.channel.send(Importer.Picture(1))
+
+# ------------------------------------ #
+#                 Admin                #
+# ------------------------------------ #
+
+@bot.command(name = "Reload")
+@commands.is_owner()
+async def Reload(ctx):
+    import Importer
+    import Loggy
+    Loggy.Create("Katty")
+    load_dotenv()
+# ------------------------------------ #
+#                Secrets               #
+# ------------------------------------ #
 
 # ---------------- Gay --------------- #
 @bot.command(name = "Gay")
