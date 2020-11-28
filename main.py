@@ -33,7 +33,7 @@ GenOptions=["AnimeGirl","CatGirl"]
 # ----------- Main Section ----------- #
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=(bot.command_prefix+"Help")))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=(str(bot.command_prefix+"Help"))))
     Loggy.Add("Discord,Bot Activated","Discord")
 
 # --------------- Help --------------- #
@@ -48,9 +48,9 @@ async def Help(ctx):
     Help:\n\
         Prints this menu.\n\
         Usage - "+bot.command_prefix+"Help\n\
-    Options:\n\
-        Prints avaliable Gen commands.\n\
-        Usage - "+bot.command_prefix+"Options\n\
+    Gen:\n\
+        Displays possible options on entry\n\
+        Usage - "+bot.command_prefix+"*OPTION*\n\
     \n\
     Admin Only: \n\
     Prefix:\n\
