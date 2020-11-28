@@ -15,12 +15,14 @@ load_dotenv()
 
 # ----------- Bot Variables ---------- #
 TOKEN = os.getenv("TOKEN")
-bot = commands.Bot(command_prefix="!T ")
+bot = commands.Bot(command_prefix="K!")
 
 HHelp = ("```\
-Help   - Displays this menu\n\
-Catty  - Shows you a Cute Cat Girl\n\
-Kitty  - Shows you a Cute Anime Girl\n\
+Help - Displays this menu\n\
+Gen  - Input\n\
+Admin\n\
+  - Input\n\
+Gen  - Input\n\
 ```")
 
 BCN = 1#Bot Cooldown Normal
@@ -33,7 +35,7 @@ BCR = 2#Bot Cooldown Reddit
 # ----------- Main Section ----------- #
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="you ;)")) 
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=(bot.command_prefix+"Help")))
     Loggy.Add("Discord,Bot Activated","Discord")
 
 # --------------- Help --------------- #
@@ -46,27 +48,13 @@ async def Help(ctx):
     msg = (HHelp)
     await ctx.channel.send(msg)
 
-@bot.command(name = "Prefix")
-@commands.has_permissions(ban_members=True, kick_members=True) 
-async def setprefix(ctx, prefix):
-    bot.command_prefix = prefix
-    await ctx.send(f"Prefix changed to ``{prefix}``")
-
 # --------------- Catty -------------- #
-@bot.command(name = "Catty")
+@bot.command(name = "Gen")
 @commands.is_nsfw()
 @commands.cooldown(1,BCR,BucketType.default)
-async def Catty(ctx):
+async def Catty(ctx,Input):
     Loggy.Add ("Command,Catty",ctx.author)
-    await ctx.channel.send(Importer.Picture(0))
-
-# --------------- Kitty -------------- #
-@bot.command(name = "Kitty")
-@commands.is_nsfw()
-@commands.cooldown(1,BCR,BucketType.default)
-async def Kitty(ctx):
-    Loggy.Add ("Command,Kitty",ctx.author)
-    await ctx.channel.send(Importer.Picture(1))
+    await ctx.channel.send(Importer.Picture(Input))
 
 # ------------------------------------ #
 #                 Admin                #
@@ -78,7 +66,17 @@ async def Reload(ctx):
     import Importer
     import Loggy
     Loggy.Create("Katty")
+    Loggy.Add ("Command,Reload",ctx.author)
     load_dotenv()
+
+@bot.command(name = "Prefix")
+@commands.has_permissions(ban_members=True, kick_members=True) 
+async def setprefix(ctx, prefix):
+    bot.command_prefix = prefix
+    await ctx.send(f"Prefix changed to ``{prefix}``")
+    Loggy.Add (f"Command,Prefix - ``{prefix}``",ctx.author)
+    #Changes help message to fit prefix
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=(bot.command_prefix+"Help")))
 # ------------------------------------ #
 #                Secrets               #
 # ------------------------------------ #
