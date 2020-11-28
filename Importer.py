@@ -24,23 +24,24 @@ lstConvDicts = [
     {
     #r/AnimeGirls
     #Note: alternative with s on end
-    "kitty"        : "AnimeGirls",
-    "anime"        : "AnimeGirls",
-    "egirl"        : "AnimeGirls",
-    "animegirl"    : "AnimeGirls"
+    "anime"        : "AnimeGirl",
+    "girl"        : "AnimeGirl",
+    "egirl"        : "AnimeGirl",
+    "animegirl"    : "AnimeGirl"
     },
     {
-    "katty"         : "CatGirls",
-    "catty"         : "CatGirls",
-    "animecatgirl" : "CatGirls",
-    "catgirl"      : "CatGirls"
+    "kitty"        : "CatGirl",
+    "katty"        : "CatGirl",
+    "catty"        : "CatGirl",
+    "catgirl"      : "CatGirl",
+    "catgirl"      : "CatGirl"
     }
     ]
 
 # ------------ Subreddits ------------ #
 DictSubs = {
-    "AnimeGirls" : ['AnimeGirls','AverageAnimeTiddies'],
-    "CatGirls"   : ['animecatgirls','Nekomimi']
+    "AnimeGirl" : ['AnimeGirls','AverageAnimeTiddies'],
+    "CatGirl"   : ['animecatgirls','Nekomimi']
 }
 
 # ------------------------------------ #
@@ -50,32 +51,34 @@ DictSubs = {
 #Creates a dictonary of posts
 
 Posts = {
-    "AnimeGirls": [],
-    "CatGirls" : []
+    "AnimeGirl": [],
+    "CatGirl"  : []
 }
+Limit = 200
 def GeneratePosts(Input):
-    bar = Bar(('Importing Image - '+Input), fill='#', max=101)
+    bar = Bar(('Importing Image - '+Input), fill='V',suffix='ETA:%(eta)ds', max=(99))
     bar.next()
     TMPPosts = []
     
-    #While there are less thann 100 posts stored
-    while len(Posts[Input]) <= 100 :
+    #While there are less thann 200 posts stored
+    while len(Posts[Input]) <= 200 :
         #For all the subreddits for the input
-        for x in range(len(DictSubs[Input])):
-            #Define the sub
-            Sub = DictSubs[Input][x]
-            #Generate the posts form the sub
-            Import = reddit.subreddit(Sub).hot(limit=300)
-            #Take each posts and dispose of the non
-            for Post in Import:
-                if Post.url[-4:-3] == ".":
-                    TMPPosts.append(Post.url)
-            bar.next(50)
+        #Define the sub
+        #Generate the posts form the sub
+        TMP = ""
+        for Sub in DictSubs[Input]:
+            TMP = TMP + (Sub+"+")
+        Import = reddit.subreddit(TMP).hot(limit=(Limit*1.2))
+        #Take each posts and dispose of the non image posts
+        for Post in Import:
+            if Post.url[-4:-3] == ".":
+                TMPPosts.append(Post.url)
+        bar.next(49)
         random.shuffle(TMPPosts)
         #Trim Posts to 200
-        Posts[Input] = TMPPosts[100:]
-        bar.finish()
-        
+        Posts[Input] = TMPPosts[Limit:]
+    bar.finish()
+
 
 def Picture(Input):
 # ---------- Sanatise input ---------- #
@@ -86,10 +89,10 @@ def Picture(Input):
     TMP = ""
     #For the length of Space Characters
     for Chr in Input:
-        #If a non-space character
+        #If a non-space character append it
         if Chr not in Spaces:
-            #Append It
             TMP = TMP + Chr
+
     Input = TMP
 
     #Remove "s" at the end of the string
@@ -107,7 +110,7 @@ def Picture(Input):
             Input = (Dicts[Input])
 
 
-    for Types in range(len(DictSubs)):
+    for x in Posts:
         if len(Posts[Input]) < 1:
             GeneratePosts(Input)
     
