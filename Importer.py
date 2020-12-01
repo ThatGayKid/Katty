@@ -1,125 +1,99 @@
+#Python Included Imports
 import random
 from array import *
 
+#Pip included Imports
+from progress.spinner import PieSpinner
 import praw
-from progress.bar import Bar
 
 from dotenv import load_dotenv
 import os
 load_dotenv()
-
-reddit = praw.Reddit(
-    client_id=os.getenv("CLIENT_ID"),
-    client_secret=os.getenv("CLIENT_SECRET"),
-    user_agent=os.getenv("USER_AGENT")
-)
 
 
 # ------------------------------------ #
 #             Dictionaries             #
 # ------------------------------------ #
 
-# ------------ Conversion ------------ #
-lstConvDicts = [
-    {
-    #r/AnimeGirls
-    #Note: alternative with s on end
-    "anime"        : "AnimeGirl",
-    "girl"        : "AnimeGirl",
-    "egirl"        : "AnimeGirl",
-    "animegirl"    : "AnimeGirl"
-    },
-    {
-    "kitty"        : "CatGirl",
-    "katty"        : "CatGirl",
-    "catty"        : "CatGirl",
-    "catgirl"      : "CatGirl",
-    "catgirl"      : "CatGirl"
-    }
-    ]
 
-# ------------ Subreddits ------------ #
-DictSubs = {
-    "AnimeGirl" : ['AnimeGirls','AverageAnimeTiddies'],
-    "CatGirl"   : ['animecatgirls','Nekomimi']
-}
 
+#Bot Variables
+AutoCorrectStatus = False
+Limit = 10
+Presets = {}
 # ------------------------------------ #
 #               Functions              #
 # ------------------------------------ #
 
-#Creates a dictonary of posts
+def Help(Message):
+    msg = "```Options:"
+    #Prints Name then Discrption for each entry
+    for Option in Presets:
+        msg += f"\n    {Presets[Option]['Name']} :"
+        msg += f"\n        {Presets[Option]['Description']}"
+    #Appeneds Discord Formatting To the End
+    msg+='```'
+    return msg
 
-Posts = {
-    "AnimeGirl": [],
-    "CatGirl"  : []
-}
-Limit = 200
-def GeneratePosts(Input):
-    bar = Bar(('Importing Image - '+Input), fill='V',suffix='ETA:%(eta)ds', max=(99))
-    bar.next()
-    TMPPosts = []
-    
-    #While there are less thann 200 posts stored
-    while len(Posts[Input]) <= 200 :
-        #For all the subreddits for the input
-        #Define the sub
-        #Generate the posts form the sub
-        TMP = ""
-        for Sub in DictSubs[Input]:
-            TMP = TMP + (Sub+"+")
-        Import = reddit.subreddit(TMP).hot(limit=(Limit*1.2))
-        #Take each posts and dispose of the non image posts
-        for Post in Import:
-            if Post.url[-4:-3] == ".":
-                TMPPosts.append(Post.url)
-        bar.next(49)
-        random.shuffle(TMPPosts)
-        #Trim Posts to 200
-        Posts[Input] = TMPPosts[Limit:]
-    bar.finish()
+def Add(InName,InDescription,InSubReddits):
+    Presets [str(InName)]={
+         "Name"         : InName,
+         "Description"  : InDescription,
+         "SubReddits"   : InSubReddits,
+         "Posts"        : iter(['End'])
+         }
+
+def GeneratePost(Input):
+    #Combine these 2 later
+    if Input not in Presets:
+        return\
+(f"{Input} isn't a valid option :frowning:\n\
+Try using Gen Help")
+
+    Result = next(Presets[Input]['Posts'])
+
+    if Result == "End":
+        PreprocessPosts(Input)
+#Return the result
+    return Result
 
 
-def Picture(Input):
-# ---------- Sanatise input ---------- #
-    #Lowercase it
-    Input = Input.lower()
-    #Replace Spaces
-    Spaces = [" ","-","_"]
+def PreprocessPosts(Input):
+    reddit = praw.Reddit(
+        client_id=os.getenv("CLIENT_ID"),
+        client_secret=os.getenv("CLIENT_SECRET"),
+        user_agent=os.getenv("USER_AGENT")
+    )
     TMP = ""
-    #For the length of Space Characters
-    for Chr in Input:
-        #If a non-space character append it
-        if Chr not in Spaces:
-            TMP = TMP + Chr
-
-    Input = TMP
-
-    #Remove "s" at the end of the string
-    if Input[-1] == "s":
-        Input = Input[:-1]
-
-
-# -------- Auto-Corrects Term -------- #
-#Run through theconversion dictionary
-    for Dicts in lstConvDicts:
-        #If the term is in a dictionary
-        if Input in Dicts:
-            #Return the name of the entry
-            #e.g. (is Anime_Girls in the AnimeGirls entry) yes so AnimeGirls is returned
-            Input = (Dicts[Input])
-
-
-    for x in Posts:
-        if len(Posts[Input]) < 1:
-            GeneratePosts(Input)
+    TMPPosts = []
+    spinner = PieSpinner("Generating Posts for "+Input+" ")
+    #Generate the posts form the sub
+    #Appends subreddit to a string
+    for Sub in Presets[Input]["SubReddits"]:
+        if TMP == Presets[Input]["SubReddits"][-1]:
+            TMP = TMP + (Sub)
+        else:
+            TMP = TMP + (Sub+"+")
+            spinner.next()
+        Import = reddit.subreddit(TMP).hot(limit=(Limit*1.25))
+    del TMP
+    #Take each posts and dispose of the non image posts
+    for Post in Import:
+        spinner.next()
+        if Post.url[-4:-3] == ".":
+            TMPPosts.append(Post.url)
+    random.shuffle(TMPPosts)
     
-            
-    Response = Posts[Input][0]
-    del Posts [Input][0]
-    return Response
+    Result = (TMPPosts[:Limit])
+    Result.append('End')
+    Presets[Input]["Posts"] = iter(Result)
+    spinner.finish()
+
+
+Add("Anime Titty Comittee","Shows you a member of the ATE(Anime Titty Committee).",['AnimeGirls','AverageAnimeTiddies'])
+Add("Pets At Home","Shows you the cutest Kitty Catty you've ever seen.",['animecatgirls','Nekomimi'])
 
 #Create post lists
-for Subs in DictSubs:
-    Picture(Subs)
-    
+for Entry in Presets:
+    PreprocessPosts(Entry)
+

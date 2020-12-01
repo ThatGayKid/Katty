@@ -3,6 +3,9 @@ import datetime
 import os
 import pathlib
 from pathlib import Path
+
+from dotenv import load_dotenv
+load_dotenv()
 # Getting the current date  
 # and time
 
@@ -13,24 +16,32 @@ def GetTime():
 
 LogFolder = Path(Path().absolute(),"Logs")
 Log = ""
+Logging = os.getenv("LOGGING")
 
 #Create Log Folder if it doesn't exist
-def Create(Name):
-    global Log
-    Log = Path(Path().absolute(),"Logs",(Name+" - "+str(GetTime())+".csv"))
-    
-    if (os.path.isdir(LogFolder) == False):
-        os.mkdir(LogFolder)
-        
-    f = open(Log,"a")
-    f.write("Type,Message,User,TimeStamp\n")
-    f.close
-    
-    print ("Log will be saved at - "+str(Log))
+if Logging == "1":
+    def Create(Name):
+        global Log
+        Log = Path(Path().absolute(),"Logs",(Name+" - "+str(GetTime())+".csv"))
 
-def Add(message,author):
-    print(message)
-    f = open(Log,"a")
-    f.write(str(message)+',"'+str(author)+'","'+str(datetime.datetime.utcnow())+'"\n')
-    f.close
-    return
+        if (os.path.isdir(LogFolder) == False):
+            os.mkdir(LogFolder)
+        
+        f = open(Log,"a")
+        f.write("Type,Message,User,TimeStamp\n")
+        f.close
+    
+        print ("Logging Enabled - Log will be saved at - "+str(Log))
+
+    def Add(message,author):
+        print(message)
+        f = open(Log,"a")
+        f.write(str(message)+',"'+str(author)+'","'+str(datetime.datetime.utcnow())+'"\n')
+        f.close
+        
+elif Logging == "0":
+    def Create(Name):
+        print ("Logging Disabled - No Log will be saved")
+    def Add(message,author):
+        print(message)
+        

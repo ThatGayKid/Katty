@@ -1,14 +1,18 @@
 # -------------- Imports ------------- #
+#Python Imports
+import time
+import os
+#Pip Imports
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, has_permissions, CheckFailure
 from discord.ext.commands.cooldowns import BucketType
-import time
-import os
 
+#Locally Stored Imports
 import Importer
 import Loggy
 Loggy.Create("Katty")
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,15 +20,8 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 bot = commands.Bot(command_prefix=os.getenv("PREFIX"))
 MSGPrefix = ">>> "
-BCN = 1#Bot Cooldown Normal
-BCR = 2#Bot Cooldown Reddit
-
-GenOptions=["AnimeGirl","CatGirl"]
-
-
-
-
-
+BCN = 0#Bot Cooldown Normal
+BCR = 0#Bot Cooldown Reddit
 
 # ------------------------------------ #
 #                  Bot                 #
@@ -49,8 +46,11 @@ async def Help(ctx):
         Prints this menu.\n\
         Usage - "+bot.command_prefix+"Help\n\
     Gen:\n\
-        Displays possible options on entry\n\
-        Usage - "+bot.command_prefix+"*OPTION*\n\
+        Generates Images based on Input.\n\
+        Usage - "+bot.command_prefix+"Gen\n\
+    Add:\n\
+        Adds new options for Gen NOT AVALIABLE YET\n\
+        Usage - "+bot.command_prefix+"Add\n\
     \n\
     Admin Only: \n\
     Prefix:\n\
@@ -65,41 +65,53 @@ async def Help(ctx):
 @bot.command(name = "Gen")
 @commands.is_nsfw()
 @commands.cooldown(1,BCR,BucketType.default)
-async def Generate(ctx,Input):
-    if Input == "":
-        Loggy.Add ("Command,Genrate - Options",ctx.author)
-        msg = "Gen Options: "
-        for Option in GenOptions:
-            msg =  msg + "\n    " +Option
-        await ctx.channel.send("```"+msg+"```")
+async def Gen(ctx,*,message):
+    log = "Command,Generate - "+message
+    
+    if message == "Help" or "":
+        msg=(Importer.Help(message))
     else:
-        Loggy.Add (f"Command,Generate - ``{Input}``",ctx.author)
-        msg = (Importer.Picture(Input))
-        await ctx.channel.send(msg)
+        msg=(Importer.GeneratePost(message))
 
+    log = "Command,Generate - "+message
+    Loggy.Add(log,ctx.author)
+    await ctx.channel.send(msg)
+# ------------ Re-generate ------------ #
+# @Gen.error
+# async def Gen.error(ctx, error):
+#     log = ("Crash,Generate - "+commands.CommandInvokeError)
+#     msg = "OOPSIE WOOPSIE!! Uwu We made a fucky wucky!! A wittle fucko boingo! The code monkeys at our headquaters are working VEWY HARD to fix this!"
+#     Loggy.Add(err,ctx.author)
+#     await ctx.channel.send(msg)
 
-
-
+# ------------ Add Entries ----------- #
+@bot.command(name = "Add")
+@commands.is_nsfw()
+@commands.cooldown(1,BCR,BucketType.default)
+async def AddPost(ctx):
+    msg = ">>>Not Avaliable"
+    await ctx.channel.send(msg)
+    
 # ------------------------------------ #
-#                 Admin                #
+#----------------Admin-----------------#
 # ------------------------------------ #
 
 # --------------- Limit -------------- #
 @bot.command(name = "Limit")
 @commands.has_permissions(ban_members=True, kick_members=True) 
-async def Limit(ctx, LimitCHG):
-    Importer.Limit = LimitCHG
-    Loggy.Add ("Admin, Limit",ctx.author)
+async def Limit(ctx, Limit):
+    Importer.Limit = Limit
+    Loggy.Add (f"Admin, Limit - {Limit}",ctx.author)
     msg = (f"Limit changed to "+Importer.Limit)
     await ctx.send(MSGPrefix+msg)
 
 # -------------- Prefix -------------- #
 @bot.command(name = "Prefix")
 @commands.has_permissions(ban_members=True, kick_members=True) 
-async def setprefix(ctx, prefix):
+async def setprefix(ctx,*,prefix):
     bot.command_prefix = prefix
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=(bot.command_prefix+"Help")))
-    Loggy.Add (f"Admin,Prefix - ``{prefix}``",ctx.author)
+    Loggy.Add ("Admin,Prefix - "+prefix,ctx.author)
     msg = (f"Prefix changed to ``{prefix}``")
     await ctx.send(MSGPrefix+msg)
     #Changes help message to fit prefix
@@ -109,6 +121,7 @@ async def setprefix(ctx, prefix):
 @bot.command(name = "Reload")
 @commands.is_owner()
 async def Reload(ctx):
+    
     import Importer
     import Loggy
     Loggy.Create("Katty")
@@ -118,13 +131,6 @@ async def Reload(ctx):
     bot.command_prefix = os.getenv("PREFIX")
     msg = ("Reloaded Bot ;)")
     await ctx.send(MSGPrefix+msg)
-
-
-
-
-
-
-
 # ------------------------------------ #
 #                Secrets               #
 # ------------------------------------ #
@@ -134,6 +140,7 @@ async def Reload(ctx):
 @commands.is_nsfw()
 @commands.cooldown(1,BCN,BucketType.default)
 async def Gay(ctx):
+    await bot.add_reaction(bot,"\U0001F534")
     Loggy.Add ("Secret,Gay",ctx.author)
     await ctx.channel.send(MSGPrefix+"no u")
 
@@ -145,5 +152,5 @@ async def Gay(ctx):
 async def Cute(ctx):
     Loggy.Add ("Secret,Cute",ctx.author)
     await ctx.channel.send("https://imgur.com/a/zBWGUuB")
-
+                   
 bot.run(TOKEN)
