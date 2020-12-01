@@ -19,7 +19,7 @@ load_dotenv()
 
 #Bot Variables
 AutoCorrectStatus = False
-Limit = 10
+Limit = int(os.getenv("LIMIT"))
 Presets = {}
 # ------------------------------------ #
 #               Functions              #
