@@ -70,7 +70,6 @@ async def Help(ctx):
 
 # ------------ Add Entries ----------- #
 @bot.command(name = "Add")
-@commands.is_nsfw()
 @commands.cooldown(1,BCR,BucketType.default)
 async def AddPost(ctx):
     Loggy.Add("Command,Add Started",ctx)
