@@ -16,13 +16,14 @@ def GetTime():
 
 LogFolder = Path(Path().absolute(),"Logs")
 Log = ""
+Baseline = 0
 Logging = os.getenv("LOGGING")
 
 #Create Log Folder if it doesn't exist
 if Logging == "1":
     def Create(Name):
-        global Log
         Log = Path(Path().absolute(),"Logs",(Name+" - "+str(GetTime())+".csv"))
+        Baseline = GetTime()
 
         if (os.path.isdir(LogFolder) == False):
             os.mkdir(LogFolder)
@@ -33,15 +34,15 @@ if Logging == "1":
     
         print ("Logging Enabled - Log will be saved at - "+str(Log))
 
-    def Add(message,author):
-        print(message)
+    def Add(Message,ctx):
+        print(Message)
         f = open(Log,"a")
-        f.write(str(message)+',"'+str(author)+'","'+str(datetime.datetime.utcnow())+'"\n')
+        f.write(str(Message)+',"'+str(ctx.author)+'","'+str((GetTime()-Baseline))+'"\n')
         f.close
         
 elif Logging == "0":
     def Create(Name):
         print ("Logging Disabled - No Log will be saved")
-    def Add(message,author):
-        print(message)
+    def Add(Message,ctx):
+        print(Message)
         
