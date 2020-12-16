@@ -3,7 +3,6 @@ import random
 from array import *
 import os
 #Pip included Imports
-from progress.spinner import PieSpinner
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -14,32 +13,21 @@ reddit = praw.Reddit(
     client_secret=os.getenv("CLIENT_SECRET"),
     user_agent=os.getenv("USER_AGENT")
 )
-    
 
-
-# ------------------------------------ #
-#             Dictionaries             #
-# ------------------------------------ #
-
-
-
-#Bot Variables
-AutoCorrectStatus = int((os.getenv("CORRECTIONS")))
+# ----------- Bot Variables ---------- #
 Limit = int(os.getenv("LIMIT"))
 Presets = {}
-# ------------------------------------ #
-#               Functions              #
-# ------------------------------------ #
 
+# ------------- Functions ------------ #
 def Help():
     msg = "Options:"
-    #Prints Name then Discrption for each entry
+    #Returns Name then Discrption for each entry
     for Option in Presets:
-        msg += f"\n\n  {Presets[Option]['Name']}"
-        msg += f"      {Presets[Option]['Description']}"
-        msg += "\n   SubReddits:"
+        msg += f"\n    {Presets[Option]['Name']}\
+                 \n        {Presets[Option]['Description']}\
+                 \n        SubReddits:"
         for Subreddits in Presets[Option]['SubReddits']:
-            msg += f"\n     {Subreddits}"
+            msg += f"\n          r/{Subreddits}"
     #Appeneds Discord Formatting To the End
     return msg
 
@@ -59,7 +47,7 @@ def Edit(OName,InType,InText):
 def Delete(UName,Preset):
     if Presets[Preset]['Author'] == UName:
         del Presets[Preset]
-        return f"{Preset} deleted successfully."
+        return f"{Preset} deleted successfully"
     else:
         return f"{Preset} has not been deleted, you are not the author"
 
@@ -68,7 +56,10 @@ def Check(SubReddit):
     try:
         for x in reddit.subreddit(SubReddit).top(limit=(1)):
             TMP.append(x)
-            return True
+            if len(TMP) == 1:
+                return True
+            else:
+                return False
     except: 
         return False
 
@@ -97,7 +88,6 @@ Try using Gen Help")
 def PreprocessPosts(Input):
     TMP = ""
     TMPPosts = []
-    spinner = PieSpinner("Generating Posts for "+Input+" ")
     #Generate the posts form the sub
     #Appends subreddit to a string
     for Sub in Presets[Input]["SubReddits"]:
@@ -105,12 +95,10 @@ def PreprocessPosts(Input):
             TMP = TMP + (Sub)
         else:
             TMP = TMP + (Sub+"+")
-            spinner.next()
         Import = reddit.subreddit(TMP).hot(limit=(Limit*1.25))
     del TMP
     #Take each posts and dispose of the non image posts
     for Post in Import:
-        spinner.next()
         if Post.url[-4:-3] == ".":
             TMPPosts.append(Post.url)
     random.shuffle(TMPPosts)
@@ -118,4 +106,3 @@ def PreprocessPosts(Input):
     Result = (TMPPosts[:Limit])
     Result.append('End')
     Presets[Input]["Posts"] = iter(Result)
-    spinner.finish()
