@@ -24,21 +24,19 @@ BCN = os.getenv("BCN")#Bot Cooldown Normal
 BCR = os.getenv("BCR")#Bot Cooldown Reddit
 
 def Form(msg):
-    # lines = (msg.split('\n'))
-    # for x in range(len(lines)):
-    #     lines[x] = f"|  {lines[x]}"
-    # msg = "\n".join(lines)
-    # return f"```____________________\n{msg}\n________```"
-    return f"```\n{msg}\n```"
+    lines = (msg.split('\n'))
+    for x in range(len(lines)):
+        lines[x] = f"|> {lines[x]}"
+    msg = ("\n".join(lines))
+    return f"```{msg}```"
 # ------------------------------------ #
 #                  Bot                 #
 # ------------------------------------ #
 
 # ----------- Main Section ----------- #
 @bot.event
-async def on_ready():
-    await bot.change_presence(activity=discord.Game(name=(str(bot.command_prefix+"Help"))))
-    Loggy.Add("Discord,Bot Activated","Discord")
+async def Ready():
+    await bot.change_presence(activity=discord.Game(name=(str("Try: "+bot.command_prefix+"Help"))))
 
 # --------------- Help --------------- #
 bot.remove_command('help')
@@ -55,10 +53,18 @@ User Commands:\n\
         Generates Images based on options from Gen Help\n\
         Usage - {bot.command_prefix}Gen\n\
     Add:\n\
-        Adds new Gen Options (W.I.P.)\n\
+        Adds new Gen Options\n\
         Usage - {bot.command_prefix}Add\n\
     \n\
-Admin Only: \n\
+    Del:\n\
+        Delete a  Gen Options (W.I.P.)\n\
+        Usage - {bot.command_prefix}Add\n\
+    \n\
+    Edit:\n\
+        Edit a Gen Options (W.I.P.)\n\
+        Usage - {bot.command_prefix}Add\n\
+    \n\
+Owner Only: \n\
     Prefix:\n\
         Changes the bot's prefix\n\
         Usage - {bot.command_prefix}Prefix *PREFIX*\n\
@@ -89,8 +95,9 @@ async def Gen(ctx):
 # ------------ Add Entries ----------- #
 @bot.command(name = "Add")
 @commands.cooldown(1,20,BucketType.default)
+@commands.max_concurrency(1,per=BucketType.default,wait=False)
 @commands.guild_only()
-async def AddPost(ctx):
+async def Add(ctx):
     Loggy.Add("Command,Add Started",ctx)
     Input = ["","",[]]
 # ---------- Option Handler ---------- #
@@ -152,9 +159,9 @@ async def AddPost(ctx):
                 if len(Subs) > 0:
                     for emoji in ['➕','✅']:
                         await botmessage.add_reaction(emoji)
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(1)
                     try:
-                        Awn = await bot.wait_for('reaction_add', timeout=10)
+                        Awn = await bot.wait_for('reaction_add', timeout=15)
                     except asyncio.TimeoutError:
                         await botmessage.edit(content=Form( "Timed Out" ))
                         await asyncio.sleep(3)
@@ -174,15 +181,15 @@ async def AddPost(ctx):
                     return
                 
             msg = \
-            f"\nName: {Input[0]}\
-              \nDescription:{Input[1]}\
-              \nSubreddits: {Input[2]}\
+            f"\nName:        {Input[0]}\
+              \nDescription: {Input[1]}\
+              \nSubreddits:  {Input[2]}\
             \n\nAre you happy with this?:"
             
             await botmessage.edit(content=(Form(msg)))
             for emoji in ['❌','✅']:
                 await botmessage.add_reaction(emoji)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(1)
             
             while True:
                 try:
@@ -204,16 +211,16 @@ async def AddPost(ctx):
         
         for emoji in ['💬','📄','📌','✅']:
             await botmessage.add_reaction(emoji)
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(1)
         
         await botmessage.edit(content=(Form(\
         f"Please select an option:\
-        \n💬 - Name: {Input[0]}\
+        \n💬 - Name:        {Input[0]}\
         \n📄 - Description: {Input[1]}\
-        \n📌 - Subreddits: {Input[2]}\
+        \n📌 - Subreddits:  {Input[2]}\
         \n✅ - Submit")))
         try:
-            Awn = await bot.wait_for('reaction_add', timeout=15)
+            Awn = await bot.wait_for('reaction_add', timeout=30)
         except asyncio.TimeoutError:
             await botmessage.edit(content=Form( "Timed Out" ))
             await botmessage.clear_reactions()
@@ -246,16 +253,20 @@ async def RemovePost(ctx):
 
 # --------------- Limit -------------- #
 @bot.command(name = "Limit")
-@commands.has_permissions(ban_members=True, kick_members=True) 
+@commands.is_owner()
 async def Limit(ctx, Limit):
-    Importer.Limit = Limit
-    Loggy.Add (f"Admin, Limit - {Limit}",ctx)
-    msg = (f"Limit changed to "+Importer.Limit)
+    message = ctx.message.content[(len(bot.command_prefix))+4:]
+    if len(message) == 0:
+        msg = (f"The Limit is "+Importer.Limit)
+    else:
+        Importer.Limit = int(Limit)
+        Loggy.Add (f"Admin, Limit - {Limit}",ctx)
+        msg = (f"Limit changed to "+Importer.Limit)
     await ctx.send(Form(msg))
 
 # -------------- Prefix -------------- #
 @bot.command(name = "Prefix")
-@commands.has_permissions(ban_members=True, kick_members=True) 
+@commands.is_owner()
 async def setprefix(ctx,*,prefix):
     bot.command_prefix = prefix
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=(bot.command_prefix+"Help")))

@@ -87,7 +87,7 @@ Try using Gen Help")
 
 def PreprocessPosts(Input):
     TMP = ""
-    TMPPosts = []
+    Result = []
     #Generate the posts form the sub
     #Appends subreddit to a string
     for Sub in Presets[Input]["SubReddits"]:
@@ -95,14 +95,13 @@ def PreprocessPosts(Input):
             TMP = TMP + (Sub)
         else:
             TMP = TMP + (Sub+"+")
-        Import = reddit.subreddit(TMP).hot(limit=(Limit*1.25))
+        Import = reddit.subreddit(TMP).hot(limit=Limit)
     del TMP
     #Take each posts and dispose of the non image posts
     for Post in Import:
         if Post.url[-4:-3] == ".":
-            TMPPosts.append(Post.url)
-    random.shuffle(TMPPosts)
+            Result.append(Post.url)
+    random.shuffle(Result)
     
-    Result = (TMPPosts[:Limit])
     Result.append('End')
     Presets[Input]["Posts"] = iter(Result)
