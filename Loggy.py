@@ -38,11 +38,11 @@ if Logging == "1":
         try:
             Author = str(ctx.author)
         except:
-            Author = ctx
+            Author = str(ctx)
             
         print(Message)
         f = open(Log,"a")
-        f.write(str(Message)+',"'+Author+'","'+str((GetTime()-Baseline))+'"\n')
+        f.write(Message+',"'+Author+'","'+str((GetTime()-Baseline))+'"\n')
         f.close
         
 elif Logging == "0":

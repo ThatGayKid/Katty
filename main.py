@@ -86,36 +86,48 @@ async def Gen(ctx):
     Loggy.Add(log,ctx)
     await ctx.channel.send(msg)
 
-
 # ------------ Add Entries ----------- #
 @bot.command(name = "Add")
-@commands.cooldown(1,BCN,BucketType.default)
+@commands.cooldown(1,20,BucketType.default)
+@commands.guild_only()
 async def AddPost(ctx):
     Loggy.Add("Command,Add Started",ctx)
     Input = ["","",[]]
-
 # ---------- Option Handler ---------- #
     async def Option(Reaction,botmessage):
         React=str(Reaction[0])
         User=str(Reaction[1])
         await botmessage.clear_reactions()
-        Loggy.Add(f"Command,Add Option {React}",ctx)
+        Loggy.Add(f"Command,Add Option {Reaction[0]}",ctx)
 
         if React == "💬":
             await botmessage.edit(content=Form( "Please enter a name for this entry:" ))
-            Input[0] = (await bot.wait_for('message', check=lambda message: message.author == ctx.author)).content
+            try:
+                Input[0] = (await bot.wait_for('message', timeout=20 , check=lambda message: message.author == ctx.author)).content
+            except asyncio.TimeoutError:
+                await botmessage.edit(content=Form( "Timed Out" ))
+                await asyncio.sleep(3)
             return 
         
         elif React == '📄':
             await botmessage.edit(content=Form( "Write a Description for your entry:" ))
-            Input[1] = (await bot.wait_for('message', check=lambda message: message.author == ctx.author)).content
+            try:
+                Input[1] = (await bot.wait_for('message', timeout=30 , check=lambda message: message.author == ctx.author)).content
+            except asyncio.TimeoutError:
+                await botmessage.edit(content=Form( "Timed Out" ))
+                await asyncio.sleep(3)
             return 
 
         elif React == '📌':
             Subs = []
             while True:
                 await botmessage.edit(content=Form( 'Now Add a SubReddit to get posts from:\nExample: "memes" or "r/pics"' ))
-                Sub = (await bot.wait_for('message', check=lambda message: message.author == ctx.author)).content.lower()
+                try:
+                    Sub = (await bot.wait_for('message', timeout=20 , check=lambda message: message.author == ctx.author)).content.lower()
+                except asyncio.TimeoutError:
+                    await botmessage.edit(content=Form( "Timed Out" ))
+                    await asyncio.sleep(3)
+                    break
                 
                 #Remove Formatting
                 if Sub[:2] == "r/":
@@ -130,9 +142,7 @@ async def AddPost(ctx):
                     msg = ""
                     Subs.append(Sub)
                 
-                if len(Subs) == 0:
-                    msg += "Please Enter a Subreddit."
-                elif len(Subs) == 1:
+                if len(Subs) == 1:
                     msg += "Is this your final Subreddit?"
                 else:
                     msg += "Are these your final Subreddits?"
@@ -143,8 +153,12 @@ async def AddPost(ctx):
                     for emoji in ['➕','✅']:
                         await botmessage.add_reaction(emoji)
                     await asyncio.sleep(0.5)
-
-                    Awn = await bot.wait_for('reaction_add')
+                    try:
+                        Awn = await bot.wait_for('reaction_add', timeout=10)
+                    except asyncio.TimeoutError:
+                        await botmessage.edit(content=Form( "Timed Out" ))
+                        await asyncio.sleep(3)
+                        break
                     await botmessage.clear_reactions()
                     if str(Awn[0]) == "✅":
                         Input[2] = Subs
@@ -171,7 +185,12 @@ async def AddPost(ctx):
             await asyncio.sleep(0.3)
             
             while True:
-                Awn = await bot.wait_for('reaction_add')
+                try:
+                    Awn = await bot.wait_for('reaction_add', timeout=30)
+                except asyncio.TimeoutError:
+                    await botmessage.edit(content=Form( "Timed Out" ))
+                    await asyncio.sleep(3)
+                    break
                 await botmessage.clear_reactions()
                 Reaction = str(Awn[0])
                 if Reaction =="✅":
@@ -193,14 +212,24 @@ async def AddPost(ctx):
         \n📄 - Description: {Input[1]}\
         \n📌 - Subreddits: {Input[2]}\
         \n✅ - Submit")))
-
-        Awn = await bot.wait_for('reaction_add')
-        if await Option(Awn,botmessage) == "SUBMIT":
+        try:
+            Awn = await bot.wait_for('reaction_add', timeout=15)
+        except asyncio.TimeoutError:
+            await botmessage.edit(content=Form( "Timed Out" ))
+            await botmessage.clear_reactions()
+            await asyncio.sleep(3)
+            await botmessage.delete()
+            break
+        ConfirmTest = await Option(Awn,botmessage)
+        if ConfirmTest  == "SUBMIT":
             break
 
-    Importer.Add(Input[0],Input[1],Input[2],ctx.author)
-    Loggy.Add(f"Command,Add - {Input[0]} - {Input[1]} - {Input[2]} - {str(ctx.author)}",ctx)
-    await botmessage.edit(content=(Form(f"{Input[0]} was Successfully Added")))
+    if ConfirmTest  == "SUBMIT":
+        Importer.Add(Input[0],Input[1],Input[2],ctx.author)
+        Loggy.Add(f"Command,Add - {Input[0]} - {Input[1]} - {Input[2]} - {str(ctx.author)}",ctx)
+        await botmessage.edit(content=(Form(f"{Input[0]} was Successfully Added")))
+        await asyncio.sleep(3)
+        await botmessage.delete()
 
 @bot.command(name = "Del")
 @commands.cooldown(1,BCN,BucketType.default)
