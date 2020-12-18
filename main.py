@@ -20,9 +20,11 @@ load_dotenv()
 # ----------- Bot Variables ---------- #
 TOKEN = os.getenv("TOKEN")
 bot = commands.Bot(command_prefix=os.getenv("PREFIX"))
-BCN = os.getenv("BCN")#Bot Cooldown Normal
-BCR = os.getenv("BCR")#Bot Cooldown Reddit
-
+#Asyncio Delay Tyes
+FailDelay    = 5  #Delay for a command failing
+TimeoutDelay = 60 #Delay for a command to timeout
+DeleteDelay  = 10 #Delay for deleting a message
+EmojiDelay  = 0.3 #Delay for reacting to emoji
 def Form(msg):
     return f"```{msg}```"
 # ------------------------------------ #
@@ -36,46 +38,52 @@ async def Ready():
     await bot.change_presence(activity=discord.Game(name=(str("Try: "+bot.command_prefix+"Help"))))
 
 # --------------- Help --------------- #
+#How long the help message should stay up before deleting
+HelpRemain = 30
 bot.remove_command('help')
 @bot.command(name = "Help")
-@commands.cooldown(1,20,BucketType.default)
+@commands.cooldown(1,HelpRemain,BucketType.default)
 async def Help(ctx):
     Loggy.Add ("Help,Start",ctx)
     msg = (f"\
 User Commands:\n\
-    Help:\n\
-        Prints this menu.\n\
-        Usage - {bot.command_prefix}Help\n\
-    Gen:\n\
-        Generates Images based on options from Gen Help\n\
-        Usage - {bot.command_prefix}Gen\n\
-    Add:\n\
-        Adds new Gen Options\n\
-        Usage - {bot.command_prefix}Add\n\
+  Help:\n\
+    Prints this menu.\n\
+    Usage - {bot.command_prefix}Help\n\
+  Gen:\n\
+    Generates Images based on options from Gen Help\n\
+    Usage - {bot.command_prefix}Gen\n\
+  Add:\n\
+    Adds new Gen Options\n\
+    Usage - {bot.command_prefix}Add\n\
     \n\
-    Del:\n\
-        Delete a  Gen Options (W.I.P.)\n\
-        Usage - {bot.command_prefix}Add\n\
+  Del:\n\
+    Delete a  Gen Options (W.I.P.)\n\
+    Usage - {bot.command_prefix}Add\n\
     \n\
-    Edit:\n\
-        Edit a Gen Options (W.I.P.)\n\
-        Usage - {bot.command_prefix}Add\n\
+  Edit:\n\
+    Edit a Gen Options (W.I.P.)\n\
+    Usage - {bot.command_prefix}Add\n\
     \n\
 Owner Only: \n\
-    Prefix:\n\
-        Changes the bot's prefix\n\
-        Usage - {bot.command_prefix}Prefix *PREFIX*\n\
-    Limit:\n\
-        Changes amount of preloaded images\n\
-        Usage - {bot.command_prefix}Limit *LIMIT*")
+  Prefix:\n\
+    Changes the bot's prefix\n\
+    Usage - {bot.command_prefix}Prefix *PREFIX*\n\
+  Limit:\n\
+    Changes amount of preloaded images\n\
+    Usage - {bot.command_prefix}Limit *LIMIT*\
+")
     botmessage = await ctx.channel.send(Form(msg))
     Loggy.Add ("Help,Displayed",ctx)
+    await asyncio.sleep(HelpRemain)
+    await botmessage.delete()
+    Loggy.Add ("Help,Deleted",ctx)
     Loggy.Add ("Help,End",ctx)
 
 # ------------- Generate ------------- #
 @bot.command(name = "Gen")
-@commands.cooldown(5,BCR,BucketType.default)
-async def ds(ctx):
+@commands.max_concurrency(1,per=BucketType.default,wait=True)
+async def Gen(ctx):
     Loggy.Add(f"Generate,Start",ctx)
     message = ctx.message.content[(len(bot.command_prefix))+4:]
     
@@ -93,7 +101,6 @@ async def ds(ctx):
 
 # ------------ Add Entries ----------- #
 @bot.command(name = "Add")
-@commands.cooldown(1,20,BucketType.default)
 @commands.max_concurrency(1,per=BucketType.default,wait=False)
 @commands.guild_only()
 async def Add(ctx):
@@ -114,7 +121,7 @@ async def Add(ctx):
             except asyncio.TimeoutError:
                 Loggy.Add(f"Add,Name Timeout",ctx)
                 await botmessage.edit(content=Form( "Ah,I Timed Out." ))
-                await asyncio.sleep(8)
+                await asyncio.sleep(TimeoutDelay)
             return 
         
         elif React == '📄':
@@ -125,7 +132,7 @@ async def Add(ctx):
             except asyncio.TimeoutError:
                 Loggy.Add(f"Add,Description Timeout",ctx)
                 await botmessage.edit(content=Form( "Ah,I Timed Out." ))
-                await asyncio.sleep(8)
+                await asyncio.sleep(TimeoutDelay)
             return 
 
         elif React == '📌':
@@ -138,7 +145,7 @@ async def Add(ctx):
                 except asyncio.TimeoutError:
                     Loggy.Add(f"Add,SubReddit Text Timeout",ctx)
                     await botmessage.edit(content=Form( "Ah,I Timed Out." ))
-                    await asyncio.sleep(8)
+                    await asyncio.sleep(TimeoutDelay)
                     break
                 
                 #Remove Formatting
@@ -164,13 +171,13 @@ async def Add(ctx):
                 
                 for emoji in ['➕','✅']:
                     await botmessage.add_reaction(emoji)
-                await asyncio.sleep(1)
+                await asyncio.sleep(EmojiDelay)
                 try:
                     Awn = await bot.wait_for('reaction_add', timeout=60)
                 except asyncio.TimeoutError:
                     Loggy.Add(f"Add,SubReddit Accept Timeout",ctx)
                     await botmessage.edit(content=Form( "Ah,I Timed Out." ))
-                    await asyncio.sleep(8)
+                    await asyncio.sleep(TimeoutDelay)
                     break
                 
                 await botmessage.clear_reactions()
@@ -186,7 +193,7 @@ async def Add(ctx):
                 if len(x) == 0:
                     Loggy.Add(f"Add,Submit Missing Entry",ctx)
                     await botmessage.edit(content=(Form("Oops an Error, You're Missing an Entry.")))
-                    await asyncio.sleep(8)
+                    await asyncio.sleep(FailDelay)
                     return
                 
             msg = \
@@ -198,7 +205,7 @@ async def Add(ctx):
             await botmessage.edit(content=(Form(msg)))
             for emoji in ['❌','✅']:
                 await botmessage.add_reaction(emoji)
-            await asyncio.sleep(1)
+            await asyncio.sleep(EmojiDelay)
             
             while True:
                 try:
@@ -206,7 +213,7 @@ async def Add(ctx):
                 except asyncio.TimeoutError:
                     Loggy.Add(f"Add,Submit Timeout",ctx)
                     await botmessage.edit(content=Form( "Ah,I Timed Out." ))
-                    await asyncio.sleep(8)
+                    await asyncio.sleep(TimeoutDelay)
                     break
                 await botmessage.clear_reactions()
                 Reaction = str(Awn[0])
@@ -224,7 +231,7 @@ async def Add(ctx):
         
         for emoji in ['💬','📄','📌','✅']:
             await botmessage.add_reaction(emoji)
-        await asyncio.sleep(1)
+        await asyncio.sleep(EmojiDelay)
         
         await botmessage.edit(content=(Form(\
         f"Could you select an option?\
@@ -235,39 +242,39 @@ async def Add(ctx):
         try:
             Awn = await bot.wait_for('reaction_add', timeout=60)
         except asyncio.TimeoutError:
-            await botmessage.edit(content=Form( "Ah,I Timed Out." ))
             await botmessage.clear_reactions()
-            await asyncio.sleep(8)
+            await botmessage.edit(content=Form( "Ah,I Timed Out." ))
+            await asyncio.sleep(DeleteDelay)
             await botmessage.delete()
             break
         ConfirmTest = await Option(Awn,botmessage)
-        if ConfirmTest  == "SUBMIT":
+        if ConfirmTest  == True:
             break
 
-    if ConfirmTest  == "SUBMIT":
+    if ConfirmTest  == True:
         Importer.Add(Input[0],Input[1],Input[2],ctx.author)
         Loggy.Add(f"Add, New Entry - {Input[0]},{Input[1]},{Input[2]},{str(ctx.author)}",ctx)
         await botmessage.edit(content=(Form(f"I successfully added {Input[0]} 🌝")))
-        await asyncio.sleep(10)
+        await asyncio.sleep(DeleteDelay)
         await botmessage.delete()
         
     Loggy.Add(f"Add,End",ctx)
 
 @bot.command(name = "Del")
-@commands.cooldown(1,3,BucketType.default)
+@commands.max_concurrency(1,per=BucketType.default,wait=False)
 async def Del(ctx):
     Loggy.Add(f"Del,Start",ctx)
     botmessage = await ctx.channel.send('WIP')
-    await asyncio.sleep(4)
+    await asyncio.sleep(DeleteDelay)
     botmessage.delete()
     Loggy.Add(f"Del,End",ctx)
 
 @bot.command(name = "Edit")
-@commands.cooldown(1,5,BucketType.default)
+@commands.max_concurrency(1,per=BucketType.default,wait=False)
 async def Edit(ctx):
     Loggy.Add(f"Edit,Start",ctx)
     botmessage = await ctx.channel.send('WIP')
-    await asyncio.sleep(4)
+    await asyncio.sleep(DeleteDelay)
     botmessage.delete()
     Loggy.Add(f"Edit,End",ctx)
 # ------------------------------------ #
@@ -298,8 +305,9 @@ async def Limit(ctx):
     
 # -------------- Prefix -------------- #
 @bot.command(name = "Prefix")
+@commands.max_concurrency(1,per=BucketType.default,wait=False)
 @commands.is_owner()
-async def Prefix(ctx,*,prefix):
+async def Prefix(ctx):
     Loggy.Add(f"Prefix,Start",ctx)
     message = ctx.message.content[(len(bot.command_prefix))+7:]
     if len(message) == 0:
@@ -324,7 +332,6 @@ async def Prefix(ctx,*,prefix):
 
 # ---------------- Gay --------------- #
 @bot.command(name = "Gay")
-@commands.cooldown(1,BCN,BucketType.default)
 async def Gay(ctx):
     Loggy.Add ("Gay,No U",ctx)
     botmessage = await ctx.channel.send(Form("no u"+ctx.user))
@@ -332,7 +339,6 @@ async def Gay(ctx):
 # --------------- Cute --------------- #
 #If your reading this, you have free access to this hidden command. If you want dick around with it.
 @bot.command(name = "SexyBoy")
-@commands.cooldown(1,BCN,BucketType.default)
 async def Cute(ctx):
     Loggy.Add ("Cute,Generated",ctx)
     await ctx.channel.send("https://imgur.com/a/zBWGUuB")
