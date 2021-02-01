@@ -1,0 +1,78 @@
+{
+    "Bot": {
+        "Owner" : "You are not the server owner",
+        "NSFW"  : "This is a NSFW only command",
+        "Status": [
+            [
+                "L",
+                "your amazing ideas"
+            ],
+            [
+                "L",
+                "your suggestions"
+            ],
+            [
+                "W",
+                "your amazing messages"
+            ],
+            [
+                "L",
+                "your beautiful voice"
+            ],
+            [
+                "W",
+                "you being successful"
+            ],
+            [
+                "W",
+                "your success"
+            ],
+            [
+                "W",
+                "you be amazing"
+            ],
+            [
+                "W",
+                "you be successful"
+            ],
+            [
+                "W",
+                "a great film"
+            ],
+            [
+                "L",
+                "a great song"
+            ],
+            [
+                "P",
+                "a great game"
+            ]
+        ],
+        "BotCrash": "https://cdn.discordapp.com/attachments/766715431427768400/798562152435679252/glados-1610462428082.wav",
+        "BotLoad" : "https://64.media.tumblr.com/91f3ab4b7e9d8a1ee4599af2e106ca6a/tumblr_ocjfbqMZ0o1ttn3y7o1_500.jpg"
+    },
+    "r34": [
+        "Fetches posts from Rule34.xxx with the inputted tags",
+        "Usage - {}r34 *tags*"
+    ],
+    "rd": [
+        "Grabs the top reddit posts from the specified subreddit",
+        "Usage - {}r *Subreddits*"
+    ],
+    "Limit": [
+        "Allows modification of the bot's post limit",
+        "Usage - {}Limit LIMIT"
+    ],
+    "Hidden": {
+        "Def"   : "I currently pick from the top {Importer.Limit} posts",
+        "Change": "I pick from the top {I.Limit} posts now.",
+        "Fail"  : "Really? Bro... That's not a number!"
+    },
+    "Reddit": {
+        "BadSub": "This isn't a valid subreddit"
+    },
+    "Rule34": {
+        "Post"  : "{}",
+        "NoPosts":"No posts for these tags"
+    }
+}
