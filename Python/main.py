@@ -64,7 +64,7 @@ async def StatusUpdate():
         Status = random.choice(JSON["Bot"]['Status'])
         Act,Name = Activity[Status[0]],Status[1]
         await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
-        await asyncio.sleep(10)
+        await asyncio.sleep(60)
 
 
 # ------------------------------------ #
@@ -84,9 +84,11 @@ async def on_guild_join(Guild):
 @bot.command(name = 'r34', description = JSON['r34'][0], usage = JSON['r34'][1])
 @commands.max_concurrency(1,per=BucketType.guild,wait=True)
 @commands.is_nsfw()
-async def r34(ctx,*Message):
+async def r34(ctx):
+    Message = ctx.message.content[6:]
     try:
-        Message = JSON['Rule34']['Post'].format(R34.Generate(ctx.guild.id,(''.join(Message)))['@file_url'])
+        Post = R34.Generate(ctx.guild.id,Message)
+        Message = JSON['Rule34']['Post'].format(Post['@file_url'],Message.title(),ctx.author)
         await SendMessage(ctx,Message,1)
     except commands.errors.NSFWChannelRequired:
         await SendMessage(ctx,Form(JSON['Bot']['NSFW']),0)
