@@ -28,8 +28,8 @@ def Generate(ID:int,Tags:str) -> str:
     if ID not in RecentPosts.keys():
         RecentPosts[ID] = []
     #If the recent posts exceed the limit, pop the first value
-    if len(RecentPosts[ID]) > 80:
-        RecentPosts.pop(0)
+    if len(RecentPosts[ID]) > 100:
+        RecentPosts[ID].pop(0)
     #Get the entry
     Entry = GetPost(ID,Tags)
     #If it failed return an error message
