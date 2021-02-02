@@ -73,6 +73,7 @@
     },
     "Rule34": {
         "Post"  : "```Author: {}\nTags:   {}```\n{}",
-        "NoPosts":"No posts for these tags"
+        "NoPosts":"No posts for these tags",
+        "Timeout":"The connection to r34.xxx timed out :("
     }
 }

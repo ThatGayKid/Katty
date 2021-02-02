@@ -10,11 +10,14 @@ def GetPost(ID:int,Tags:str) -> dict:
     Paramaters = {
         'limit' :'100',
         'tags'  : Tags}
-    with requests.get(url,params=Paramaters) as Get:
-        Parsed = xmltodict.parse(Get.text)['posts']
+    try:
+        with requests.get(url,params=Paramaters,timeout=5) as Get:
+            Parsed = xmltodict.parse(Get.text)['posts']
+    except requests.exceptions.Timeout:
+        return JSON['Rule34']['Timeout']
     #If the count is bigger smaller than 2, fail
     if int(Parsed['@count']) < 2:
-        return False
+        return JSON['Rule34']['NoPosts']
     #Remove recent posts
     Parsed = Parsed['post']
     Parsed.sort(key= lambda Key: Key['@score'])
@@ -32,9 +35,7 @@ def Generate(ID:int,Tags:str) -> str:
         RecentPosts[ID].pop(0)
     #Get the entry
     Entry = GetPost(ID,Tags)
-    #If it failed return an error message
-    if Entry == False:
-        return JSON['Rule34']['NoPosts']
-
-    RecentPosts[ID].append(Entry['@id'])
+    if type(Entry) == dict:
+        #Append the post id to the recent posts
+        RecentPosts[ID].append(Entry['@id'])
     return Entry

@@ -1,8 +1,10 @@
-import os,json,asyncio,discord,random
+import os,json,random,pathlib,atexit
+import asyncio
+import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
-import Reddit as Rdt
-import Rule34 as R34
+from Python import Reddit as Rdt
+from Python import Rule34 as R34
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -11,24 +13,18 @@ JSON = json.load(open('Text/Text.json'))
 
 #Iniate bot
 bot     = commands.Bot(command_prefix=os.getenv("PREFIX"))
-#Shortcut Commaands
-Servers = {}
-
+Servers = None
 class Server():
     """
     A object representing a server's status and configurations
     """
-    def __init__    (self,Guild):
+    def __init__    (self,Limit=100,TextCleanup=True,PostCleanup=False,CleanupTime=30):
+        self.RecentPosts= []
         self.Presets    = []
-        self.Limit      = 100
-        self.TextCleanup= True
-        self.PostCleanup= False
-        self.CleanupTime= 30
-
-    def PresetDef   (self):
-        with json.load(open('Defaults.json')) as Def:
-            for Preset in Def:
-                self.Presets.append(Preset(Preset['Name'],Preset['Desc'],Preset['SubR'],'Default'))
+        self.Limit      = int(Limit)
+        self.TextCleanup= bool(TextCleanup)
+        self.PostCleanup= bool(PostCleanup)
+        self.CleanupTime= int(CleanupTime)
 
 # ------------------------------------ #
 #           Useful Functions           #
@@ -53,10 +49,6 @@ async def SendMessage(ctx,Msg:str,Type:int):
         await asyncio.sleep(Server.CleanupTime)
         await Message.delete()
 
-async def Setup(Guild):
-    print(f'|Guild Setup|ID:{Guild.id}|Name:{Guild.name}|')
-    Servers[Guild.id] = Server(Guild)
-
 Activity={
         "L":discord.ActivityType.listening,
         "W":discord.ActivityType.streaming,
@@ -68,6 +60,38 @@ async def StatusUpdate():
         await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
         await asyncio.sleep(60)
 
+def LoadHandler():
+    TmpServers = {}
+    SaveFile = 'Text/State.json'
+    if pathlib.Path(SaveFile).exists():
+        #Get the dump from the designated save file
+        print('Found State: Loading')
+        with open(SaveFile) as File:
+            Dump = json.load(File)
+        for x in Dump:
+            TmpServers[x] = Server(Dump[x]['Limit'],Dump[x]['TextCleanup'],Dump[x]['PostCleanup'],Dump[x]['CleanupTime'])
+        global Servers
+        Servers = TmpServers
+    #If there is no existing State Dump (New Setup or Corruption)
+    else:
+        print('No State: Using Defaults')
+        #Geneate a default state from defauls
+        for Guild in bot.guilds:
+            Servers[Guild.id] = Server()
+
+
+@atexit.register
+def ExitHandler():
+    print('Bot Crashed OwO')
+    if (Servers == None) or (Servers == {}):
+        print('No State Loaded: Outta Here')
+        return
+    Dump = {}
+    for x in Servers:
+        Dump[x] = Servers[x].__dict__
+    print(f"Saving State as:{Dump}")
+    with open('Text/State.json','w') as File:
+        json.dump(Dump,File)
 
 # ------------------------------------ #
 #             Bot Commands             #
@@ -75,11 +99,13 @@ async def StatusUpdate():
 
 @bot.event
 async def on_ready():
-    for Guild in (bot.guilds):
-        await Setup(Guild)
-    await StatusUpdate()
+    LoadHandler()
+    print("Bot Loaded UwU")
+    Servers = await StatusUpdate()
 async def on_guild_join(Guild):
-    await Setup(Guild)
+    Servers[Guild.id] = Server()
+async def on_guild_exit(Guild):
+    del Servers[Guild.id]
 
 @bot.command(name = 'r34', description = JSON['r34'][0], usage = JSON['r34'][1])
 @commands.max_concurrency(1,per=BucketType.guild,wait=True)
@@ -89,9 +115,14 @@ async def r34(ctx):
     Message = ctx.message.content[(len(bot.command_prefix)+4):]
     #Use the R34 api to get a post info
     Post = R34.Generate(ctx.guild.id,Message)
-    #Generate a message from the post's date
-    Message = JSON['Rule34']['Post'].format(ctx.author,Post['@tags'],Post['@file_url'])
-    #Send that message with the post setting on the message handler
+    if type(Post) == str:
+        #String Error message becomes message
+        Message = Post
+    elif type(Post) == dict:
+        #Append the post id to the recent posts
+        (SvCls(ctx).RecentPosts[ctx.guild.id]).append(Post['@id'])
+        #Format a message from that response
+        Message = JSON['Rule34']['Post'].format(ctx.author,Post['@tags'],Post['@file_url'])
     await SendMessage(ctx,Message,1)
 
 # @bot.command(name = 'rd', description = JSON['rd'][0], usage = JSON['rd'][1])
