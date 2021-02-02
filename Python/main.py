@@ -6,13 +6,12 @@ import Rule34 as R34
 
 from dotenv import load_dotenv
 load_dotenv()
+#
 JSON = json.load(open('Text/Text.json'))
 
-# ------------------------------------ #
-#                Classes               #
-# ------------------------------------ #
+#Iniate bot
 bot     = commands.Bot(command_prefix=os.getenv("PREFIX"))
-Prefix  = bot.command_prefix
+#Shortcut Commaands
 Servers = {}
 
 class Server():
@@ -34,15 +33,18 @@ class Server():
 # ------------------------------------ #
 #           Useful Functions           #
 # ------------------------------------ #
+#Commands that are Shortcuts or Handlers
 
 #Forms a message to be sent
-def Form    (msg):return f"```{msg}```"
+def Form  (msg:str) -> str:
+    return f"```{msg}```"
 #Returns the serverclass from ctx
-def SvClass (ctx):return Servers[ctx.guild.id]
+def SvCls (ctx) -> Server:
+    return Servers[ctx.guild.id]
 
 #Message cleanup
 async def SendMessage(ctx,Msg:str,Type:int):
-    Server = SvClass(ctx)
+    Server = SvCls(ctx)
     Message = await ctx.channel.send(Msg)
     if Server.TextCleanup and Type == 0:
         await asyncio.sleep(Server.CleanupTime)
@@ -73,11 +75,9 @@ async def StatusUpdate():
 
 @bot.event
 async def on_ready():
-    #Setup classes for each existing guild
     for Guild in (bot.guilds):
         await Setup(Guild)
     await StatusUpdate()
-
 async def on_guild_join(Guild):
     await Setup(Guild)
 
@@ -85,35 +85,36 @@ async def on_guild_join(Guild):
 @commands.max_concurrency(1,per=BucketType.guild,wait=True)
 @commands.is_nsfw()
 async def r34(ctx):
-    Message = ctx.message.content[6:]
-    try:
-        Post = R34.Generate(ctx.guild.id,Message)
-        Message = JSON['Rule34']['Post'].format(Post['@file_url'],Message.title(),ctx.author)
-        await SendMessage(ctx,Message,1)
-    except commands.errors.NSFWChannelRequired:
-        await SendMessage(ctx,Form(JSON['Bot']['NSFW']),0)
-
-@bot.command(name = 'rd', description = JSON['rd'][0], usage = JSON['rd'][1])
-@commands.max_concurrency(1,per=BucketType.guild,wait=True)
-async def r(ctx,SubReddit,*a):
-    Message = ''
+    #Save message as the users command without the prefix and command
+    Message = ctx.message.content[(len(bot.command_prefix)+4):]
+    #Use the R34 api to get a post info
+    Post = R34.Generate(ctx.guild.id,Message)
+    #Generate a message from the post's date
+    Message = JSON['Rule34']['Post'].format(ctx.author,Post['@tags'],Post['@file_url'])
+    #Send that message with the post setting on the message handler
     await SendMessage(ctx,Message,1)
 
-@bot.command(name = 'Limit', description=JSON['Limit'][0],  usage = JSON['Limit'][1])
-@commands.is_owner()
-async def Limit(ctx,*Message):
-    try:
-        if len(Message) == 0:
-            msg=JSON['Limit']['Def'].format(SvClass(ctx).Limit)
-        else:
-            try:
-                SvClass(ctx).Limit = int(Message)
-                msg=JSON['Limit']['Change'].format(SvClass(ctx).Limit)
-            except ValueError:
-                msg=JSON['Limit']['Fail']
-    except commands.errors.NotOwner:
-        msg = JSON['Bot']['Owner']
-        SendMessage(ctx,Form(msg),0)
+# @bot.command(name = 'rd', description = JSON['rd'][0], usage = JSON['rd'][1])
+# @commands.max_concurrency(1,per=BucketType.guild,wait=True)
+# async def r(ctx,SubReddit,*a):
+#     Message = ''
+#     await SendMessage(ctx,Message,1)
+
+# @bot.command(name = 'Limit', description=JSON['Limit'][0],  usage = JSON['Limit'][1])
+# @commands.is_owner()
+# async def Limit(ctx,*Message):
+#     try:
+#         if len(Message) == 0:
+#             msg=JSON['Limit']['Def'].format(SvClass(ctx).Limit)
+#         else:
+#             try:
+#                 SvClass(ctx).Limit = int(Message)
+#                 msg=JSON['Limit']['Change'].format(SvClass(ctx).Limit)
+#             except ValueError:
+#                 msg=JSON['Limit']['Fail']
+#     except commands.errors.NotOwner:
+#         msg = JSON['Bot']['Owner']
+#         SendMessage(ctx,Form(msg),0)
 
 @bot.command(name = "RollOver",hidden = True)
 @commands.is_owner()

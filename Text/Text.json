@@ -72,7 +72,7 @@
         "BadSub": "This isn't a valid subreddit"
     },
     "Rule34": {
-        "Post"  : "{}\n```Tags:   {}\nAuthor: {}```",
+        "Post"  : "```Author: {}\nTags:   {}```\n{}",
         "NoPosts":"No posts for these tags"
     }
 }
