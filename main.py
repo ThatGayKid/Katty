@@ -1,4 +1,4 @@
-import os,json,random,pathlib,atexit
+import os,json,pickle,random,pathlib,atexit
 import asyncio
 import discord
 from discord.ext import commands
@@ -18,13 +18,13 @@ class Server():
     """
     A object representing a server's status and configurations
     """
-    def __init__    (self,Limit=100,TextCleanup=True,PostCleanup=False,CleanupTime=30):
+    def __init__    (self):
         self.RecentPosts= []
         self.Presets    = []
-        self.Limit      = int(Limit)
-        self.TextCleanup= bool(TextCleanup)
-        self.PostCleanup= bool(PostCleanup)
-        self.CleanupTime= int(CleanupTime)
+        self.Limit      = 100
+        self.TextCleanup= True
+        self.PostCleanup= False
+        self.CleanupTime= 30
 
 # ------------------------------------ #
 #           Useful Functions           #
@@ -58,40 +58,36 @@ async def StatusUpdate():
         Status = random.choice(JSON["Bot"]['Status'])
         Act,Name = Activity[Status[0]],Status[1]
         await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
-        await asyncio.sleep(60)
+        await asyncio.sleep(60*5)
 
 def LoadHandler():
-    TmpServers = {}
-    SaveFile = 'Text/State.json'
-    if pathlib.Path(SaveFile).exists():
+    global Servers
+    #If there is a saved state
+    if pathlib.Path('Text/State.pickle').exists():
         #Get the dump from the designated save file
         print('Found State: Loading')
-        with open(SaveFile) as File:
-            Dump = json.load(File)
-        for x in Dump:
-            TmpServers[x] = Server(Dump[x]['Limit'],Dump[x]['TextCleanup'],Dump[x]['PostCleanup'],Dump[x]['CleanupTime'])
-        global Servers
-        Servers = TmpServers
+        with open('Text/State.pickle','rb') as File:
+            Servers = pickle.load(File)
     #If there is no existing State Dump (New Setup or Corruption)
     else:
-        print('No State: Using Defaults')
         #Geneate a default state from defauls
+        print('No State: Using Defaults')
+        Servers = {}
         for Guild in bot.guilds:
             Servers[Guild.id] = Server()
 
 
 @atexit.register
 def ExitHandler():
-    print('Bot Crashed OwO')
+    print('Bot Closing OwO')
+    #If state is empty or invalid
     if (Servers == None) or (Servers == {}):
-        print('No State Loaded: Outta Here')
-        return
-    Dump = {}
-    for x in Servers:
-        Dump[x] = Servers[x].__dict__
-    print(f"Saving State as:{Dump}")
-    with open('Text/State.json','w') as File:
-        json.dump(Dump,File)
+        print('No State Loaded: Not Saving')
+    #If state is valid, save to pickle
+    else:
+        print(f"State Found: Saving State")
+        with open('Text/State.pickle','wb') as File:
+            pickle.dump(Servers,File)
 
 # ------------------------------------ #
 #             Bot Commands             #
@@ -104,25 +100,24 @@ async def on_ready():
     Servers = await StatusUpdate()
 async def on_guild_join(Guild):
     Servers[Guild.id] = Server()
-async def on_guild_exit(Guild):
-    del Servers[Guild.id]
+    print(f'Added to server {Guild.id}')
 
 @bot.command(name = 'r34', description = JSON['r34'][0], usage = JSON['r34'][1])
 @commands.max_concurrency(1,per=BucketType.guild,wait=True)
 @commands.is_nsfw()
 async def r34(ctx):
     #Save message as the users command without the prefix and command
-    Message = ctx.message.content[(len(bot.command_prefix)+4):]
+    Input = ctx.message.content[(len(bot.command_prefix)+4):]
     #Use the R34 api to get a post info
-    Post = R34.Generate(ctx.guild.id,Message)
+    Post = R34.Generate(ctx.guild.id,Input)
     if type(Post) == str:
         #String Error message becomes message
         Message = Post
-    elif type(Post) == dict:
+    else:
         #Append the post id to the recent posts
-        (SvCls(ctx).RecentPosts[ctx.guild.id]).append(Post['@id'])
+        (SvCls(ctx).RecentPosts).append(Post['@id'])
         #Format a message from that response
-        Message = JSON['Rule34']['Post'].format(ctx.author,Post['@tags'],Post['@file_url'])
+        Message = JSON['Rule34']['Post'].format(ctx.author,Post['@tags'].title(),Post['@file_url'])
     await SendMessage(ctx,Message,1)
 
 # @bot.command(name = 'rd', description = JSON['rd'][0], usage = JSON['rd'][1])

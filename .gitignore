@@ -158,3 +158,4 @@ dmypy.json
 R34
 .vscode/launch.json
 api.rest
+*.pickle

@@ -3,15 +3,11 @@ import xmltodict,requests
 
 
 JSON = json.load(open('Text/Text.json'))
-RecentPosts = {}
+RecentPosts={}
 
 def GetPost(ID:int,Tags:str) -> dict:
-    url = 'https://rule34.xxx/index.php?page=dapi&s=post&q=index'
-    Paramaters = {
-        'limit' :'100',
-        'tags'  : Tags}
     try:
-        with requests.get(url,params=Paramaters,timeout=5) as Get:
+        with requests.get('https://rule34.xxx/index.php?page=dapi&s=post&q=index',params={'limit':'100','tags':Tags},timeout=5) as Get:
             Parsed = xmltodict.parse(Get.text)['posts']
     except requests.exceptions.Timeout:
         return JSON['Rule34']['Timeout']
@@ -23,8 +19,9 @@ def GetPost(ID:int,Tags:str) -> dict:
     Parsed.sort(key= lambda Key: Key['@score'])
     for Post in Parsed:
         if not(Post['@id'] in RecentPosts[ID]):
+            RecentPosts[ID].append(Post['@id'])
             return Post
-    return random.choice(Parsed)
+    return JSON['Rule34']['NoMorePost']
 
 def Generate(ID:int,Tags:str) -> str:
     #If hasn't got a valid dictionary yet
@@ -34,8 +31,4 @@ def Generate(ID:int,Tags:str) -> str:
     if len(RecentPosts[ID]) > 100:
         RecentPosts[ID].pop(0)
     #Get the entry
-    Entry = GetPost(ID,Tags)
-    if type(Entry) == dict:
-        #Append the post id to the recent posts
-        RecentPosts[ID].append(Entry['@id'])
-    return Entry
+    return GetPost(ID,Tags)

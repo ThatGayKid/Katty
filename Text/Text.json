@@ -72,8 +72,9 @@
         "BadSub": "This isn't a valid subreddit"
     },
     "Rule34": {
-        "Post"  : "```Author: {}\nTags:   {}```\n{}",
-        "NoPosts":"No posts for these tags",
-        "Timeout":"The connection to r34.xxx timed out :("
+        "Post"       : "```Author: {}\nTags:   {}```{}",
+        "NoPosts"    : "No posts for these tags",
+        "Timeout"    : "The connection to r34.xxx timed out :(",
+        "NoMorePost" : "No more additionaly posts :("
     }
 }
