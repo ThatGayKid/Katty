@@ -1,18 +1,26 @@
-import os,json,pickle,random,pathlib,atexit
+import atexit
+import pickle
 import asyncio
+from os import getenv
+from pathlib import Path
+from sys import getsizeof
+from json import load as jsonload
+from random import choice as randomchoice
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
+
 from Python import Reddit as Rdt
 from Python import Rule34 as R34
 
 from dotenv import load_dotenv
 load_dotenv()
 #
-JSON = json.load(open('Text/Text.json'))
+JSON = jsonload(open('Text/Text.json'))
 
 #Iniate bot
-bot     = commands.Bot(command_prefix=os.getenv("PREFIX"))
+bot     = commands.Bot(command_prefix=getenv("PREFIX"))
 Servers = None
 class Server():
     """
@@ -22,8 +30,7 @@ class Server():
         self.RecentPosts= []
         self.Presets    = []
         self.Limit      = 100
-        self.TextCleanup= True
-        self.PostCleanup= False
+        self.Cleanup    = True
         self.CleanupTime= 30
 
 # ------------------------------------ #
@@ -39,13 +46,16 @@ def SvCls (ctx) -> Server:
     return Servers[ctx.guild.id]
 
 #Message cleanup
-async def SendMessage(ctx,Msg:str,Type:int):
+async def SendMessage(ctx,Msg):
     Server = SvCls(ctx)
-    Message = await ctx.channel.send(Msg)
-    if Server.TextCleanup and Type == 0:
-        await asyncio.sleep(Server.CleanupTime)
-        await Message.delete()
-    if Server.PostCleanup and Type == 1:
+    #If the message is a string (Usually )
+    if type(Msg) == str:
+        Message = await ctx.send(Msg)
+    #If the message is an discord embed (Usually a post)
+    if type(Msg) == discord.embeds.Embed:
+        Message = await ctx.send(embed=Msg)
+
+    if Server.Cleanup:
         await asyncio.sleep(Server.CleanupTime)
         await Message.delete()
 
@@ -55,7 +65,7 @@ Activity={
         "P":discord.ActivityType.playing}
 async def StatusUpdate():
     while True:
-        Status = random.choice(JSON["Bot"]['Status'])
+        Status = randomchoice(JSON["Bot"]['Status'])
         Act,Name = Activity[Status[0]],Status[1]
         await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
         await asyncio.sleep(60*5)
@@ -63,7 +73,7 @@ async def StatusUpdate():
 def LoadHandler():
     global Servers
     #If there is a saved state
-    if pathlib.Path('Text/State.pickle').exists():
+    if Path('Text/State.pickle').exists():
         #Get the dump from the designated save file
         print('Found State: Loading')
         with open('Text/State.pickle','rb') as File:
@@ -97,13 +107,14 @@ def ExitHandler():
 async def on_ready():
     LoadHandler()
     print("Bot Loaded UwU")
-    Servers = await StatusUpdate()
+    #await StatusUpdate()
+
 async def on_guild_join(Guild):
     Servers[Guild.id] = Server()
     print(f'Added to server {Guild.id}')
 
 @bot.command(name = 'r34', description = JSON['r34'][0], usage = JSON['r34'][1])
-@commands.max_concurrency(1,per=BucketType.guild,wait=True)
+@commands.cooldown(3,1,type=BucketType.member)
 @commands.is_nsfw()
 async def r34(ctx):
     #Save message as the users command without the prefix and command
@@ -117,8 +128,19 @@ async def r34(ctx):
         #Append the post id to the recent posts
         (SvCls(ctx).RecentPosts).append(Post['@id'])
         #Format a message from that response
-        Message = JSON['Rule34']['Post'].format(ctx.author,Post['@tags'].title(),Post['@file_url'])
-    await SendMessage(ctx,Message,1)
+        Title   = JSON['Rule34']['PostTitle'].format(author = str(ctx.author))
+        Desc    = JSON['Rule34']['PostTags'].format(tags = Post['@tags'])
+        Message = discord.Embed(title = Title,description=Desc,url=f"https://rule34.xxx/index.php?page=post&s=view&id={Post['@id']}")
+        Message.set_image(url=Post['@sample_url'])
+        await SendMessage(ctx,Message)
+
+@bot.command(name="em")
+async def embed(ctx):
+    URL = "https://media.discordapp.net/attachments/415136979626360842/809829207886528512/rs6z0ff7yht51.png"
+    Message = discord.Embed(title = "Test Scenario")
+    Message.set_image(url=URL)
+    Message.set_author(name=str(ctx.author))
+    await ctx.send(embed=Message)
 
 # @bot.command(name = 'rd', description = JSON['rd'][0], usage = JSON['rd'][1])
 # @commands.max_concurrency(1,per=BucketType.guild,wait=True)
@@ -147,4 +169,9 @@ async def r34(ctx):
 async def death(ctx):
     exit()
 
-bot.run(os.getenv("TOKEN"))
+@bot.command(name = "Size",hidden = True)
+@commands.is_owner()
+async def death(ctx):
+    print(getsizeof(SvCls(ctx)))
+
+bot.run(getenv("TOKEN"))

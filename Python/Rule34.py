@@ -1,8 +1,8 @@
-import json,random
+from json import load as jsonload
 import xmltodict,requests
 
 
-JSON = json.load(open('Text/Text.json'))
+JSON = jsonload(open('Text/Text.json'))
 RecentPosts={}
 
 def GetPost(ID:int,Tags:str) -> dict:
@@ -16,10 +16,9 @@ def GetPost(ID:int,Tags:str) -> dict:
         return JSON['Rule34']['NoPosts']
     #Remove recent posts
     Parsed = Parsed['post']
-    Parsed.sort(key= lambda Key: Key['@score'])
     for Post in Parsed:
-        if not(Post['@id'] in RecentPosts[ID]):
-            RecentPosts[ID].append(Post['@id'])
+        if not(int(Post['@id']) in RecentPosts[ID]):
+            RecentPosts[ID].append(int(Post['@id']))
             return Post
     return JSON['Rule34']['NoMorePost']
 
