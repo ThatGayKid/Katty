@@ -23,39 +23,33 @@ JSON = jsonload(open('Text/Text.json'))
 bot     = commands.Bot(command_prefix=getenv("PREFIX"))
 Servers = None
 class Server():
-    """
-    A object representing a server's status and configurations
-    """
+    """A object representing a server's status and configurations"""
     def __init__    (self):
-        self.RecentPosts= []
-        self.Presets    = []
-        self.Limit      = 100
-        self.Cleanup    = True
-        self.CleanupTime= 30
+        self.TextCleanup = True
+        self.PostCleanup = False
+        self.CleanupTime = 30
 
 # ------------------------------------ #
 #           Useful Functions           #
 # ------------------------------------ #
 #Commands that are Shortcuts or Handlers
 
-#Forms a message to be sent
-def Form  (msg:str) -> str:
-    return f"```{msg}```"
 #Returns the serverclass from ctx
-def SvCls (ctx) -> Server:
+def Sv (ctx) -> Server:
     return Servers[ctx.guild.id]
 
 #Message cleanup
 async def SendMessage(ctx,Msg):
-    Server = SvCls(ctx)
-    #If the message is a string (Usually )
+    Server = Sv(ctx)
+    #If the message is a string         (Error Message)
     if type(Msg) == str:
-        Message = await ctx.send(Msg)
-    #If the message is an discord embed (Usually a post)
+        Message = await ctx.send(f"```{Msg}```")
+    #If the message is an discord embed (Post and Embed)
     if type(Msg) == discord.embeds.Embed:
         Message = await ctx.send(embed=Msg)
 
-    if Server.Cleanup:
+    if ((type(Msg) == str)                  and (Server.TextCleanup)) or\
+       ((type(Msg) == discord.embeds.Embed) and (Server.PostCleanup)):
         await asyncio.sleep(Server.CleanupTime)
         await Message.delete()
 
@@ -63,12 +57,6 @@ Activity={
         "L":discord.ActivityType.listening,
         "W":discord.ActivityType.streaming,
         "P":discord.ActivityType.playing}
-async def StatusUpdate():
-    while True:
-        Status = randomchoice(JSON["Bot"]['Status'])
-        Act,Name = Activity[Status[0]],Status[1]
-        await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
-        await asyncio.sleep(60*5)
 
 def LoadHandler():
     global Servers
@@ -99,6 +87,13 @@ def ExitHandler():
         with open('Text/State.pickle','wb') as File:
             pickle.dump(Servers,File)
 
+async def StatusUpdate():
+    while True:
+        Status = randomchoice(JSON["Bot"]['Status'])
+        Act,Name = Activity[Status[0]],Status[1]
+        await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
+        await asyncio.sleep(60*5)
+
 # ------------------------------------ #
 #             Bot Commands             #
 # ------------------------------------ #
@@ -125,14 +120,13 @@ async def r34(ctx):
         #String Error message becomes message
         Message = Post
     else:
-        #Append the post id to the recent posts
-        (SvCls(ctx).RecentPosts).append(Post['@id'])
         #Format a message from that response
         Title   = JSON['Rule34']['PostTitle'].format(author = str(ctx.author))
         Desc    = JSON['Rule34']['PostTags'].format(tags = Post['@tags'])
         Message = discord.Embed(title = Title,description=Desc,url=f"https://rule34.xxx/index.php?page=post&s=view&id={Post['@id']}")
         Message.set_image(url=Post['@sample_url'])
-        await SendMessage(ctx,Message)
+
+    await SendMessage(ctx,Message)
 
 @bot.command(name="em")
 async def embed(ctx):
@@ -171,7 +165,7 @@ async def death(ctx):
 
 @bot.command(name = "Size",hidden = True)
 @commands.is_owner()
-async def death(ctx):
-    print(getsizeof(SvCls(ctx)))
+async def Size(ctx):
+    print(getsizeof(Sv(ctx)))
 
 bot.run(getenv("TOKEN"))
