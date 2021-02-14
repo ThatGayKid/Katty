@@ -1,0 +1,11 @@
+{
+    "BotLoad"       :   "Bot Loaded",
+    "LoadNoState"   :   "No State | Using Defaults",
+    "LoadState"     :   "Found State | Loading From File",
+    "StatusChange"  :   "Changing Status | Act={act} Name={name}",
+    "R34Input"      :   "User Request | {input} : {author}",
+    "R34Error"      :   "User Error | {message} : {author}",
+    "R34Post"       :   "Post Sent | {id} : {author}",
+    "CloseNoState"  :   "No State Loaded: Not Saving",
+    "CloseState"    :   "State Found: Saving State"
+}

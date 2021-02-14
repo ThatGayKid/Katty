@@ -4,7 +4,7 @@ import asyncio
 from os import getenv
 from pathlib import Path
 from sys import getsizeof
-from json import load as jsonload
+
 from random import choice as randomchoice
 
 import discord
@@ -16,9 +16,14 @@ from Python import Rule34 as R34
 
 from dotenv import load_dotenv
 load_dotenv()
-#
-JSON = jsonload(open('Text/Text.json'))
 
+from json import load as jsonload
+JSON = jsonload(open('Text/Text.json'))
+LOG  = jsonload(open('Text/Log.json'))
+
+import logging
+logging.basicConfig(filename=f'Storage/Bot.log', format='%(asctime)s %(name)s - %(levelname)s - %(message)s')
+logging.critical('New Session Started')
 #Iniate bot
 bot     = commands.Bot(command_prefix=getenv("PREFIX"))
 Servers = None
@@ -40,6 +45,7 @@ def Sv (ctx) -> Server:
 
 #Message cleanup
 async def SendMessage(ctx,Msg):
+    Log = logging.getLogger('SendMessage')
     Server = Sv(ctx)
     #If the message is a string         (Error Message)
     if type(Msg) == str:
@@ -58,39 +64,49 @@ Activity={
         "W":discord.ActivityType.streaming,
         "P":discord.ActivityType.playing}
 
+
 def LoadHandler():
+    Log = logging.getLogger('LoadHandler')
+    Log.setLevel(logging.DEBUG)
     global Servers
     #If there is a saved state
-    if Path('Text/State.pickle').exists():
+    if Path('Storage/State.pickle').exists():
         #Get the dump from the designated save file
-        print('Found State: Loading')
-        with open('Text/State.pickle','rb') as File:
+        Log.info(LOG['LoadState'])
+        with open('Storage/State.pickle','rb') as File:
             Servers = pickle.load(File)
     #If there is no existing State Dump (New Setup or Corruption)
     else:
         #Geneate a default state from defauls
-        print('No State: Using Defaults')
+        Log.info(LOG['LoadNoState'])
         Servers = {}
         for Guild in bot.guilds:
             Servers[Guild.id] = Server()
 
 
+
 @atexit.register
 def ExitHandler():
-    print('Bot Closing OwO')
+    Log = logging.getLogger('ExitHandler')
+    Log.setLevel(logging.DEBUG)
+    Log.info('Bot is shutting down')
     #If state is empty or invalid
-    if (Servers == None) or (Servers == {}):
-        print('No State Loaded: Not Saving')
+    if not(bool(Servers)):
+        Log.info(LOG['CloseNoState'])
     #If state is valid, save to pickle
     else:
-        print(f"State Found: Saving State")
-        with open('Text/State.pickle','wb') as File:
+        Log.info(LOG['CloseState'])
+        with open('Storage/State.pickle','wb') as File:
             pickle.dump(Servers,File)
 
+
 async def StatusUpdate():
+    Log = logging.getLogger('StatusUpdate')
+    Log.setLevel(logging.DEBUG)
     while True:
         Status = randomchoice(JSON["Bot"]['Status'])
         Act,Name = Activity[Status[0]],Status[1]
+        Log.debug(LOG["StatusChange"]).format(act=Act,name=Name)
         await bot.change_presence(activity=discord.Activity(type=Act, name=Name))
         await asyncio.sleep(60*5)
 
@@ -98,31 +114,38 @@ async def StatusUpdate():
 #             Bot Commands             #
 # ------------------------------------ #
 
+LogBot = logging.getLogger('BotEvent')
+LogBot.setLevel(logging.DEBUG)
 @bot.event
 async def on_ready():
     LoadHandler()
-    print("Bot Loaded UwU")
+    LogBot.info(LOG['BotLoad'])
     #await StatusUpdate()
 
 async def on_guild_join(Guild):
     Servers[Guild.id] = Server()
-    print(f'Added to server {Guild.id}')
+    LogBot.info(f'Added to server {Guild.id}')
 
 @bot.command(name = 'r34', description = JSON['r34'][0], usage = JSON['r34'][1])
 @commands.cooldown(3,1,type=BucketType.member)
 @commands.is_nsfw()
 async def r34(ctx):
+    Log = logging.getLogger('Rule34')
+    Log.setLevel(logging.DEBUG)
     #Save message as the users command without the prefix and command
     Input = ctx.message.content[(len(bot.command_prefix)+4):]
+    Log.debug(LOG['R34Input'].format(input=Input,author=str(ctx.author)))
     #Use the R34 api to get a post info
     Post = R34.Generate(ctx.guild.id,Input)
     if type(Post) == str:
         #String Error message becomes message
+        Log.debug(LOG['R34Error'].format(message=Post,author=str(ctx.author)))
         Message = Post
     else:
+        Log.debug(LOG['R34Post'] .format(id=Post['@id'],author=str(ctx.author)))
         #Format a message from that response
         Title   = JSON['Rule34']['PostTitle'].format(author = str(ctx.author))
-        Desc    = JSON['Rule34']['PostTags'].format(tags = Post['@tags'])
+        Desc    = JSON['Rule34']['PostTags'] .format(tags = Post['@tags'])
         Message = discord.Embed(title = Title,description=Desc,url=f"https://rule34.xxx/index.php?page=post&s=view&id={Post['@id']}")
         Message.set_image(url=Post['@sample_url'])
 
