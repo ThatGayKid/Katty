@@ -160,3 +160,4 @@ R34
 api.rest
 *.pickle
 tempCodeRunnerFile.py
+.env
